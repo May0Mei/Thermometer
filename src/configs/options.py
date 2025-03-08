@@ -1,4 +1,9 @@
 import argparse
+from pathlib import Path
+thermometer_path = Path(__file__).resolve().parents[2]
+with open(thermometer_path.parent/'root/languageModels/api_key.txt') as f:
+    # third line is the HG token
+    HG_token = f.readlines()[2].strip()
 
 def str2bool(string):
     return string.lower() in ['yes', 'true', 't', 1]
@@ -30,7 +35,7 @@ def process_args():
                         choices=['encoder_decoder', 'decoder_only'])
     parser.add_argument('--model_name', default='Llama-2-7b-chat-hf', help='the base LLM',
                         choices = ['Llama-2-7b-chat-hf', 'flan-t5-base', 'flan-t5-large','flan-t5-xl', 'flan-t5-xxl', 'Llama-3.1-8B'])
-    parser.add_argument('--HG_token', type=str, default= '', help='the access token on huggingface')
+    parser.add_argument('--HG_token', type=str, default= HG_token, help='the access token on huggingface')
     parser.add_argument('--max_source_length', type=int, default=256, help="for encoder-decoder model")
     parser.add_argument('--max_target_length', type=int, default=128, help="for encoder-decoder model")
     parser.add_argument('--max_length', type=int, default=2048, help="for decoder-only model")

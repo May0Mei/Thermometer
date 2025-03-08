@@ -2,6 +2,8 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import torch
 from torch import nn
+import numpy as np
+torch.cuda.empty_cache()
 from transformers import (
     AutoTokenizer,
     AutoModelForSeq2SeqLM,
@@ -9,9 +11,14 @@ from transformers import (
 )
 
 from src.fit_thermometer import Thermometer
-
 from src.configs.options import process_args
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
+
+def print_cuda_memory():
+    print(f"Allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+    print(f"Cached: {torch.cuda.memory_reserved() / 1024**2:.2f} MB")
+
+
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 args = process_args()
 
@@ -49,18 +56,60 @@ save_path = os.path.join(
     )
 
 
+if getattr(tokenizer, "pad_token_id") is None:
+    tokenizer.pad_token_id = tokenizer.eos_token_id
+
+# Prepare input
+prompt = """The probability of observing Yes given A is 0.3,\
+            the probability of observing No given A is 0.7. \
+            Now, we are given A. The next observation is:  """
+
+source = tokenizer(prompt, 
+                    max_length=args.max_length,
+                    padding="max_length",
+                    truncation=True,
+                    return_tensors='pt',
+                    return_attention_mask=True)
+source_ids = source['input_ids'].squeeze().to(dtype=torch.long)
+source_mask = source['attention_mask'].squeeze().to(dtype=torch.long)
+
+vocab = ['Yes', 'No']
+encoded_vocab = [torch.LongTensor(tokenizer.encode(v, add_special_tokens=False)).to(device) for v in vocab]
+
+# Find last hidden state
+logits_list = [[] for v in encoded_vocab]
+feature_list = []
+
+model = model_base
+model.eval()
+for param in model.parameters():
+    param.requires_grad = False
+model.to(device)
+
+if args.model_type == 'decoder_only':
+    
+    outputs = model(input_ids=source_ids.unsqueeze(axis=0).to(device),
+                    attention_mask=source_mask.unsqueeze(axis=0).to(device),
+                    output_hidden_states=True,
+                    return_dict=True)
+    logits = outputs.logits[:, -1, :]
+    for i, ev in enumerate(encoded_vocab):
+        logits_list[i].append(logits[:, ev].cpu().detach().numpy())
+    feature_list.append(outputs.hidden_states[-1][:, -1, :].cpu().detach().numpy())
+features = torch.tensor(np.concatenate(feature_list, axis=0)).squeeze()
+
+# empty cache
+torch.cuda.empty_cache()
+
+
 # Load the model
 model_thermometer = Thermometer(args.thermometer_input_size, args.thermometer_hidden_size)
 model_thermometer.load_state_dict(torch.load(os.path.join(save_path, 'model_ckpt.t7')), strict=False)
 model_thermometer.eval()
+temperature_inverse = nn.Softplus()(model_thermometer(features.unsqueeze(dim=0)))
+temperature_inverse = temperature_inverse.cpu().detach().numpy()
 
-# Find last hidden state
-model = model_base.to(device)
-model.eval()
-last_hidden_state = model(input_ids=source_ids,
-                            attention_mask=source_mask,
-                            labels=possible_labels,
-                            output_hidden_states=True,
-                            return_dict=True
-                            ).decoder_hidden_states[-1]
-temperature_inverse = nn.Softplus()(model_thermometer(last_hidden_state))
+# scale the logits by predicted temperature
+logits_all = np.concatenate(logits_list, axis=0)
+logits_scaled = torch.tensor(logits_all*temperature_inverse).to(device)
+breakpoint()
