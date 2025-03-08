@@ -35,7 +35,7 @@ else:
     raise NotImplementedError
 
 # load the saved logits, labels, and features
-load_path = f"./checkpoint/saved_logits/{args.test_dataset}/{args.model_name}"
+load_path = f"{args.root_path}/checkpoint/saved_logits/{args.test_dataset}/{args.model_name}"
 unscaled_logits_train = torch.load(os.path.join(load_path, 'unscaled_logits_train.pt'))
 true_labels_train = torch.load(os.path.join(load_path, 'true_labels_train.pt'))
 features_train = torch.load(os.path.join(load_path, 'features_train.pt'))
@@ -56,7 +56,7 @@ MCE_list = []
 Brier_list = []
 for seed in args.seed_list:
     # Define the saving path
-    base_path = './checkpoint/saved_thermometer/'
+    base_path = f'{args.root_path}/checkpoint/saved_thermometer/'
     if args.benchmark in ['mrqa']:
         directory = args.benchmark
     else:

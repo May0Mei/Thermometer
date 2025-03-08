@@ -7,7 +7,7 @@ def process_args():
     parser = argparse.ArgumentParser(description='configuration')
     parser.register('type', 'bool', str2bool)
     # general options
-    parser.add_argument('--root_path', type=str, help='the root path where the model and data are stored')
+    parser.add_argument('--root_path', type=str, default= '/n/fs/not-fmrl/Projects/language-limit/Thermometer', help='the root path where the model and data are stored')
     parser.add_argument('--training_seed', type=int, default=0, help='seed to ensure consistency')
     parser.add_argument('--seed_list', nargs='*', dest='seed_list', help='list of seeds for evaluation',type=int)
     # dataset options
@@ -28,10 +28,9 @@ def process_args():
     # base LLM model options
     parser.add_argument('--model_type', default='encoder_decoder', help='the model type',
                         choices=['encoder_decoder', 'decoder_only'])
-    parser.add_argument('--model_name', default='t5-base', help='the base LLM',
-                        choices = ['Llama-2-7b-chat-hf', 'flan-t5-base', 'flan-t5-large','flan-t5-xl', 'flan-t5-xxl',
-                                  'Llama-2-7b-chat-hf'])
-    parser.add_argument('--HG_token', type=str, help='the access token on huggingface')
+    parser.add_argument('--model_name', default='Llama-2-7b-chat-hf', help='the base LLM',
+                        choices = ['Llama-2-7b-chat-hf', 'flan-t5-base', 'flan-t5-large','flan-t5-xl', 'flan-t5-xxl', 'Llama-3.1-8B'])
+    parser.add_argument('--HG_token', type=str, default= '', help='the access token on huggingface')
     parser.add_argument('--max_source_length', type=int, default=256, help="for encoder-decoder model")
     parser.add_argument('--max_target_length', type=int, default=128, help="for encoder-decoder model")
     parser.add_argument('--max_length', type=int, default=2048, help="for decoder-only model")

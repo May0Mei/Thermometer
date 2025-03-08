@@ -75,7 +75,7 @@ data_loader_dict = {}
 for dataset_name in tasks_list:
     print('dataset_name', dataset_name)
     args.dataset = dataset_name
-    load_path = f"./checkpoint/saved_logits/{args.dataset}/{args.model_name}"
+    load_path = f"{args.root_path}/checkpoint/saved_logits/{args.dataset}/{args.model_name}"
     if not os.path.exists(load_path):
         print("Warning: Please run extract_features.py first!")
     else:
@@ -90,7 +90,7 @@ for dataset_name in tasks_list:
     data_loader_dict[dataset_name] = data_loader
 
 # Define the saving path
-base_path = './checkpoint/saved_thermometer/'
+base_path = '/n/fs/not-fmrl/Projects/language-limit/Thermometer/checkpoint/saved_thermometer/'
 if args.test_dataset in tasks_list:
     tasks_list.remove(args.test_dataset) # leave one out
     dataset_directory = f'{args.test_dataset}/'
@@ -107,7 +107,7 @@ save_path = os.path.join(
 )
 if not os.path.exists(save_path):
     os.makedirs(save_path)
-
+breakpoint()
 # training Thermometer
 torch.cuda.empty_cache() # Save GPU memory
 reset_seed(args.training_seed) # For consistency

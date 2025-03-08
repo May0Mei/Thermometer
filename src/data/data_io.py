@@ -247,17 +247,17 @@ def load_data(args, tokenizer):
 
     train_dataset = UqAutoTask.get(dataset_name).get(split="train",
                                                    split_validation_test=True,
-                                                   file_prefix=args.local_file_prefix,
+                                                   file_prefix=args.root_path,
                                                    n_obs=4000)
 
     val_dataset = UqAutoTask.get(dataset_name).get(split="validation",
                                                  split_validation_test=True,
-                                                 file_prefix=args.local_file_prefix,
+                                                 file_prefix=args.root_path,
                                                  n_obs=1000) 
 
     test_dataset = UqAutoTask.get(dataset_name).get(split="test",
                                                   split_validation_test=True,
-                                                  file_prefix=args.local_file_prefix,
+                                                  file_prefix=args.root_path,
                                                   n_obs=None)
     # store target vocabulary
     target_vocab = [tgt for tgt in set(train_dataset['target'])]
@@ -324,17 +324,17 @@ def load_thermometer_data(args, tokenizer, scaled_prob_train, scaled_prob_val, f
     
     train_dataset = UqAutoTask.get(dataset_name).get(split="train",
                                                      split_validation_test=True,
-                                                     file_prefix=args.local_file_prefix,
+                                                     file_prefix=args.root_path,
                                                      n_obs=4000)
 
     val_dataset = UqAutoTask.get(dataset_name).get(split="validation",
                                                  split_validation_test=True,
-                                                 file_prefix=args.local_file_prefix,
+                                                 file_prefix=args.root_path,
                                                  n_obs=1000)
 
     test_dataset = UqAutoTask.get(dataset_name).get(split="test",
                                                   split_validation_test=True,
-                                                  file_prefix=args.local_file_prefix,
+                                                  file_prefix=args.root_path,
                                                   n_obs=None)
 
     # store target vocabulary

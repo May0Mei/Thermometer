@@ -218,6 +218,7 @@ def eval_thermometer(
         last_hidden_state = batch['features'].to(device)
         temperature_inverse = nn.Softplus()(model_thermometer(last_hidden_state))
         temperature_list.append(temperature_inverse.cpu().detach().numpy())
+    breakpoint()
     # compute the task specific temperature
     temperature_inverse = np.concatenate(temperature_list, axis=0) # 1/T_i
     temperature_global_inverse = np.mean(temperature_inverse) #1/N \sum_i 1/T_i
@@ -226,6 +227,7 @@ def eval_thermometer(
     for k, element in enumerate(labels):
         converted_labels.append(vocab.index(element))
     target_labels = torch.tensor(converted_labels).to(device)
+    breakpoint()
     # scale the logits by predicted temperature
     logits_all = np.concatenate(logits_list, axis=0)
     logits_scaled = torch.tensor(logits_all*temperature_global_inverse).to(device)
@@ -249,3 +251,14 @@ def eval_thermometer(
             'MCE': mce_score,
             'Brier': brier_score
     }
+
+def infer_thermometer(
+        model_thermometer,
+        device,
+        logits_unscaled,
+        last_hidden_state,
+):
+    model_thermometer.eval()
+    temperature_inverse = nn.Softplus()(model_thermometer(last_hidden_state))
+    logits_scaled = torch.tensor(logits_unscaled*temperature_inverse).to(device)
+    return logits_scaled

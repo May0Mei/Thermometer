@@ -24,7 +24,7 @@ if args.model_name in ['flan-t5-small', 'flan-t5-base', 'flan-t5-large','flan-t5
     model_load_name = f'google/{args.model_name}'
     model_base = AutoModelForSeq2SeqLM.from_pretrained(model_load_name, cache_dir=CACHE_PATH)
     tokenizer = AutoTokenizer.from_pretrained(model_load_name)
-elif args.model_name in ['Llama-2-7b-chat-hf', 'Llama-3.1-8B']:
+elif args.model_name in ['Llama-3.1-8B']:
     print("Warning: Please provide User Access Tokens.")
     model_load_name = f'meta-llama/{args.model_name}'
     model_base = AutoModelForCausalLM.from_pretrained(model_load_name, cache_dir=CACHE_PATH, use_auth_token=args.HG_token)
@@ -38,7 +38,7 @@ args.dataset = args.test_dataset
 data_loader = load_data(args, tokenizer) # define the dataloader
 
 # extract logits, labels, and final-layer features
-save_path = f"/n/fs/not-fmrl/Projects/language-limit/Thermometer/checkpoint/saved_logits/{args.dataset}/{args.model_name}"
+save_path = f"/n/fs/not-fmrl/Projects/language-limit/Thermometer/checkpoint/saved_logits_lm3/{args.dataset}/{args.model_name}"
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 if not os.path.isfile(os.path.join(save_path, 'features_train.pt')):

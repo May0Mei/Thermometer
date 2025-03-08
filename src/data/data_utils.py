@@ -83,7 +83,7 @@ class BaseAbstractTask(abc.ABC):
         return dataset.select(indices)
 
     def load_dataset(self, split: int):
-        return datasets.load_dataset(self.name, self.config, split=split, cache_dir =CACHE_PATH)
+        return datasets.load_dataset(self.name, self.config, split=split, cache_dir =CACHE_PATH, trust_remote_code=True)
 
     def get_split_indices(self, split, dataset, train_size, max_size):
         indices = self.shuffled_indices(dataset)
@@ -161,7 +161,7 @@ class mmlu(AbstractTask):
                            "validation": "validation",
                            "test": "train"}
     def load_dataset(self, split):
-        datasets_all =  datasets.load_dataset('lukaemon/mmlu', self.name, split=split, cache_dir =CACHE_PATH)
+        datasets_all =  datasets.load_dataset('lukaemon/mmlu', self.name, split=split, cache_dir =CACHE_PATH, trust_remote_code=True)
         return datasets_all
 
     def preprocessor(self, example, add_prefix=True, add_vb=False):
@@ -205,7 +205,7 @@ class bigbench(AbstractTask):
         else:
             print('Invalid Argument!')
 
-        datasets_all =  datasets.load_dataset('tasksource/bigbench', self.name, split=split, cache_dir =CACHE_PATH)
+        datasets_all =  datasets.load_dataset('tasksource/bigbench', self.name, split=split, cache_dir =CACHE_PATH, trust_remote_code=True)
         filtered_dataset = datasets_all.filter(lambda example: len(example["multiple_choice_scores"])==len(self.labels_list))
         return filtered_dataset
 

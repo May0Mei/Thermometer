@@ -91,7 +91,10 @@ for i, batch in enumerate(tqdm(dataloader)):
             "rougeL": rougeL_score,
             "meta_label_rouge": meta_label_rouge
         }
-        meta_dataset = meta_dataset.append(dataset_entry, ignore_index=True)
+        # meta_dataset = meta_dataset.append(dataset_entry, ignore_index=True)
+        dataset_entry = pd.DataFrame([dataset_entry])  # Convert dict to DataFrame
+        meta_dataset = pd.concat([meta_dataset, dataset_entry], ignore_index=True)
+
     if i > META_DATASET_MAX_SIZE:
         break
     if i % 20 == 0:
