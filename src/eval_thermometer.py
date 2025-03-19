@@ -9,14 +9,18 @@ from transformers import (
     AutoTokenizer
 )
 
-from src.configs.options import process_args
+# from src.configs.options import process_args
+from src.configs.config import cfg as args
 from src.fit_thermometer import Thermometer, eval_thermometer
 from src.data.data_io import load_thermometer_data
 from src.utils import reset_seed
 
+import matplotlib.pyplot as plt
+import torch.nn.functional as F
+
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:256'
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-args = process_args()
+# args = process_args()
 
 # define the tokenizer and hidden-dim of Thermometer model
 CACHE_PATH = f"{args.root_path}.cache/huggingface/models"
@@ -33,6 +37,39 @@ elif args.model_name in ['Llama-2-7b-chat-hf']:
     args.thermometer_hidden_size = 512
 else:
     raise NotImplementedError
+
+def plot_ece_bar_chart(logits, targets, n_bins=10):
+    """Plots a reliability diagram for model calibration."""
+    probs = F.softmax(logits, dim=1)  # Convert logits to probabilities
+    confidences, predictions = probs.max(dim=1)  # Get max confidence per sample
+    accuracies = (predictions == targets).float()
+
+    # Bin confidence values
+    bin_boundaries = torch.linspace(0, 1, n_bins + 1).to(device)
+    bin_indices = torch.bucketize(confidences, bin_boundaries, right=True) - 1
+    
+    bin_accs, bin_confs, bin_sizes = [], [], []
+    
+    for i in range(n_bins):
+        in_bin = bin_indices == i
+        if in_bin.sum().item() > 0:
+            bin_acc = accuracies[in_bin].mean().item()
+            bin_conf = confidences[in_bin].mean().item()
+            bin_accs.append(bin_acc)
+            bin_confs.append(bin_conf)
+            bin_sizes.append(in_bin.sum().item())
+
+    # Plot
+    plt.figure(figsize=(6, 6))
+    plt.plot([0, 1], [0, 1], linestyle="--", color="gray", label="Perfectly Calibrated")
+    plt.scatter(bin_confs, bin_accs, s=[s * 10 for s in bin_sizes], alpha=0.6, label="Model Calibration")
+    plt.xlabel("Confidence")
+    plt.ylabel("Accuracy")
+    plt.title("Reliability Diagram")
+    plt.legend()
+    plt.grid()
+    plt.savefig(f"{args.root_path}/src/results/ECE_bar_chart.png")
+
 
 # load the saved logits, labels, and features
 load_path = f"{args.root_path}/checkpoint/saved_logits/{args.test_dataset}/{args.model_name}"
@@ -80,6 +117,11 @@ for seed in args.seed_list:
     TOP_ECE_list.append(calibration_results_thermometer['Top-ECE'])
     MCE_list.append(calibration_results_thermometer['MCE'])
     Brier_list.append(calibration_results_thermometer['Brier'])
+
+    # Plot ECE bar chart
+    logits = calibration_results_thermometer['logits_scaled'].to(device)
+    targets = calibration_results_thermometer['target_labels'].to(device)
+    plot_ece_bar_chart(logits, targets)
 
 # Save final results
 csv_base_path = './results/thermometer/'
